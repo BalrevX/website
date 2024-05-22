@@ -1,0 +1,119 @@
+<?php
+
+defined('BASEPATH') or exit('No direct script access allowed');
+
+class Order_model extends CI_Model
+{
+    public function save_order($data){
+        $this->db->insert('orders',$data);
+    }
+
+    public function save_order_items($data){
+        $this->db->insert('order_items',$data);
+    }
+    public function save_shipment($data){
+        $this->db->insert('shipments',$data);
+    }
+    public function update_pay_order($dataupdate_order, $where){
+        $this->db->update('orders',$dataupdate_order, $where);
+
+    }
+    public function update_refund($data, $where){
+        $this->db->update('orders',$data, $where);
+
+    }
+
+    public function unpaid($id = null){
+        $this->db->select('*');
+        $this->db->from('orders');
+        $this->db->where('user_id',decode_id($this->session->userdata('id')));
+        $this->db->where('id',$id);
+        $this->db->where('deleted_at', null);
+        $this->db->order_by('id','desc');
+        return $this->db->get()->result();
+    }
+    public function paid(){
+        $this->db->select('*');
+        $this->db->from('orders');
+        $this->db->where('status','created');
+        $this->db->where('user_id',decode_id($this->session->userdata('id')));
+        $this->db->where('deleted_at', null);
+        $this->db->or_where('status','cancelled');
+        $this->db->where('user_id',decode_id($this->session->userdata('id')));
+        $this->db->where('deleted_at', null);
+        $this->db->or_where('status','created_cod');
+        $this->db->where('user_id',decode_id($this->session->userdata('id')));
+        $this->db->where('deleted_at', null);
+        $this->db->or_where('status','cod');
+        $this->db->where('user_id',decode_id($this->session->userdata('id')));
+        $this->db->where('deleted_at', null);
+        $this->db->order_by('id','desc');
+        return $this->db->get()->result();
+    }
+
+    public function packed(){
+        $this->db->select('*');
+        $this->db->from('orders');
+        $this->db->where('status','confirmed');
+        $this->db->where('user_id',decode_id($this->session->userdata('id')));
+        $this->db->where('deleted_at', null);
+        // $this->db->or_where('status','cancelled');
+        // $this->db->where('user_id',decode_id($this->session->userdata('id')));
+        $this->db->order_by('id','desc');
+        return $this->db->get()->result();
+    }
+    public function delivered(){
+        $this->db->select('*');
+        $this->db->from('orders');
+        $this->db->where('status','delivered');
+        $this->db->where('user_id',decode_id($this->session->userdata('id')));
+        $this->db->where('deleted_at', null);
+        // $this->db->or_where('status','cancelled');
+        // $this->db->where('user_id',decode_id($this->session->userdata('id')));
+        $this->db->order_by('id','desc');
+        return $this->db->get()->result();
+    }
+
+    public function completed(){
+        $this->db->select('*');
+        $this->db->from('orders');
+        $this->db->where('status','completed');
+        $this->db->where('user_id',decode_id($this->session->userdata('id')));
+        $this->db->where('deleted_at', null);
+        // $this->db->or_where('status','cancelled');
+        // $this->db->where('user_id',decode_id($this->session->userdata('id')));
+        $this->db->order_by('id','desc');
+        return $this->db->get()->result();
+    }
+
+    public function getproduct($id = null){
+        $this->db->select('orders.*, order_items.qty, order_items.name,order_items.barcode, order_items.base_price, order_items.base_total, order_items.product_id');
+        $this->db->join('order_items', 'orders.id = order_items.order_id', 'left');
+        // $this->db->where('payment_status','unpaid');
+        // $this->db->where('user_id',decode_id($this->session->userdata('id')));
+        $this->db->where([
+            'orders.user_id' => decode_id($this->session->userdata('id')),
+            // 'orders.payment_status' => 'unpaid',
+            'orders.id' => $id,
+        ]);
+        $this->db->from('orders');
+        return $this->db->get()->result();
+    }
+
+    public function del($id){
+        $params = [
+            'deleted_at' => date('Y-m-d H:i:s'),
+        ];
+		$this->db->where('id', $id);
+		$result = $this->db->update('orders', $params);
+        return $result;
+    }
+    public function complete($id){
+        $params = [
+            'status' => 'completed',
+        ];
+		$this->db->where('id', $id);
+		$result = $this->db->update('orders', $params);
+        return $result;
+    }
+}
